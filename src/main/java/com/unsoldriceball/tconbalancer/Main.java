@@ -13,9 +13,11 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 
-@Mod(modid = Main.MOD_ID, acceptableRemoteVersions = "*")
-public class Main {
 
+
+@Mod(modid = Main.MOD_ID, acceptableRemoteVersions = "*")
+public class Main
+{
     public static final String MOD_ID = "tconbalancer";
     private static final float DAMAGE_FACTOR = 0.75f;
     private static final float SPEED_FACTOR = 0.5f;
@@ -33,31 +35,36 @@ public class Main {
 
 
 
+    //ModがInitializeを呼び出す前に発生するイベント。
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event)
-    { //ModがInitializeを呼び出す前に発生するイベント。
-        MinecraftForge.EVENT_BUS.register(this); //これでこのクラス内でForgeのイベントが動作するようになるらしい。
+    {
+        //これでこのクラス内でForgeのイベントが動作するようになるらしい。
+        MinecraftForge.EVENT_BUS.register(this);
     }
+
 
 
 
     @SubscribeEvent
     public void onEntityHurt(LivingHurtEvent event)
     {
+        //イベントがサーバー側で発生、かつダメージを受けたエンティティが存在するか
         if (event.getEntity().world.isRemote) return;
-        // ダメージを受けたエンティティが存在するか
         if (event.getEntityLiving() != null)
         {
             // ダメージを与えたエンティティを取得
-            Entity attacker = event.getSource().getImmediateSource();
-            if (attacker != null)
+            final Entity L_ATTACKER = event.getSource().getImmediateSource();
+            if (L_ATTACKER != null)
             {
-                String attacker_id = attacker.getClass().toString();
-                if (!isContainID(attacker_id, TARGETS_ID)) return;      //対象でないEntityならreturn
-
-                // ダメージを(DAMAGE_FACTOR)%に減少させる
-                float reducedDamage = event.getAmount() * DAMAGE_FACTOR;
-                event.setAmount(reducedDamage);
+                final String L_ID_ATTACKER = L_ATTACKER.getClass().toString();
+                //対象となるEntityか調べる。
+                if (isContainID(L_ID_ATTACKER, TARGETS_ID))
+                {
+                    // ダメージを(DAMAGE_FACTOR)%に減少させる
+                    float reducedDamage = event.getAmount() * DAMAGE_FACTOR;
+                    event.setAmount(reducedDamage);
+                }
             }
         }
     }
@@ -68,29 +75,36 @@ public class Main {
     @SubscribeEvent
     public void onArrowSpawn(EntityJoinWorldEvent event)
     {
-        if (event.getWorld().isRemote) return;
-
-        Entity e = event.getEntity();
-        if (e instanceof EntityTippedArrow || e instanceof EntitySpectralArrow)
+        if (!event.getWorld().isRemote)
         {
-            EntityArrow arrow = (EntityArrow) e;
-            Entity shooter = arrow.shootingEntity;
-            if (shooter instanceof EntityPlayer)
-            {
-                EntityPlayer pl = (EntityPlayer) shooter;
-                String bow = pl.getHeldItemMainhand().getItem().getClass().toString();
 
-                if (isContainID(bow, BOWS_ID))
+            final Entity L_ENTITY = event.getEntity();
+
+            if (L_ENTITY instanceof EntityTippedArrow || L_ENTITY instanceof EntitySpectralArrow)
+            {
+
+                final EntityArrow L_ARROW = (EntityArrow) L_ENTITY;
+                Entity L_SHOOTER = L_ARROW.shootingEntity;
+
+                if (L_SHOOTER instanceof EntityPlayer)
                 {
-                    arrow.motionX *= SPEED_FACTOR;
-                    arrow.motionY *= SPEED_FACTOR;
-                    arrow.motionZ *= SPEED_FACTOR;
+
+                    final EntityPlayer L_PLAYER = (EntityPlayer) L_SHOOTER;
+                    final String L_BOW = L_PLAYER.getHeldItemMainhand().getItem().getClass().toString();
+
+                    if (isContainID(L_BOW, BOWS_ID))
+                    {
+                        L_ARROW.motionX *= SPEED_FACTOR;
+                        L_ARROW.motionY *= SPEED_FACTOR;
+                        L_ARROW.motionZ *= SPEED_FACTOR;
+                    }
                 }
             }
         }
     }
 
 
+    
 
     //引数の文字列にtargetsのいずれかが含まれていたらtrueを返す関数。
     private boolean isContainID(String id, String[] targets)
